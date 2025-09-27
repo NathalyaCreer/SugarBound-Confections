@@ -1,0 +1,7 @@
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "New Baking Mission", menuName = "Mission/Baking")]
+public class BakingMissionSO : MissionSO
+{
+    // Override the completion check if needed, but for now it's done by the manager call
+}

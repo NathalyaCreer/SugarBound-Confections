@@ -1,0 +1,35 @@
+using UnityEngine;
+
+// Define a base class for all AI abilities.
+public abstract class AIAbilitySO : ScriptableObject
+{
+    public string abilityName;
+    public float cooldown;
+    public int weight; // Adds weight to ability
+
+    /// <summary>
+    /// Checks if the ability's conditions are met.
+    /// </summary>
+    /// <param name="enemy">The EnemyStateManager instance.</param>
+    /// <returns>True if the ability can be executed, otherwise false.</returns>
+    public abstract bool CanExecute(EnemyStateManager enemy);
+
+    /// <summary>
+    /// Executes the ability's effect.
+    /// </summary>
+    /// <param name="enemy">The EnemyStateManager instance.</param>
+    public abstract void Execute(EnemyStateManager enemy);
+
+    /// <summary>
+    /// Returns the dynamic weight for this ability, allowing it to be
+    /// influenced by in-game factors.
+    /// </summary>
+    /// <param name="enemy">The EnemyStateManager instance.</param>
+    /// <returns>The modified weight value.</returns>
+    public virtual float GetDynamicWeight(EnemyStateManager enemy)
+    {
+        float dynamicWeight = weight;
+        // Add shared dynamic weight modifications here if necessary
+        return dynamicWeight;
+    }
+}

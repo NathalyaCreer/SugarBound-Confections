@@ -1,0 +1,23 @@
+using UnityEngine;
+
+public class PlayerSwat : MonoBehaviour
+{
+    public float swatCooldown = 1f;
+    private float lastSwatTime;
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("EnemyHand") && Time.time > lastSwatTime + swatCooldown)
+        {
+            Debug.Log("Enemy hand swatted!");
+            lastSwatTime = Time.time;
+
+            // Get a reference to the enemy and tell it to retreat
+            Enemywalk enemyWalk = other.GetComponentInParent<Enemywalk>();
+            if (enemyWalk != null)
+            {
+                enemyWalk.RetreatFromCooking(); // New method
+            }
+        }
+    }
+}

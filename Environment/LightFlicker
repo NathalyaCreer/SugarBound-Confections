@@ -1,0 +1,65 @@
+using System.Collections;
+using UnityEngine;
+
+public class LightFlicker : MonoBehaviour
+{
+    private Light lightComponent;
+
+    // Control parameters for the flicker effect
+    public float flickerIntensity = 0.5f;
+    public float minFlickerSpeed = 0.1f;
+    public float maxFlickerSpeed = 0.5f;
+
+    private float originalIntensity;
+    private bool isFlickering = false;
+
+    void Awake()
+    {
+        lightComponent = GetComponent<Light>();
+        if (lightComponent != null)
+        {
+            originalIntensity = lightComponent.intensity;
+        }
+    }
+
+    public void StartFlicker()
+    {
+        if (!isFlickering)
+        {
+            isFlickering = true;
+            StartCoroutine(FlickerRoutine());
+        }
+    }
+
+    public void StopFlicker()
+    {
+        if (isFlickering)
+        {
+            isFlickering = false;
+            StopAllCoroutines();
+            if (lightComponent != null)
+            {
+                lightComponent.intensity = originalIntensity;
+            }
+        }
+    }
+    
+    public void SetLightState(bool state)
+    {
+        if (lightComponent != null)
+        {
+            lightComponent.enabled = state;
+        }
+    }
+
+    private IEnumerator FlickerRoutine()
+    {
+        while (isFlickering)
+        {
+            lightComponent.intensity = originalIntensity - flickerIntensity;
+            yield return new WaitForSeconds(Random.Range(minFlickerSpeed, maxFlickerSpeed));
+            lightComponent.intensity = originalIntensity;
+            yield return new WaitForSeconds(Random.Range(minFlickerSpeed, maxFlickerSpeed));
+        }
+    }
+}

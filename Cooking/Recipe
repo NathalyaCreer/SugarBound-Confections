@@ -1,0 +1,27 @@
+using UnityEngine;
+
+CreateAssetMenu(fileName = "New Recipe", menuName = "Cooking/Recipe")]
+public class Recipe : ScriptableObject
+{
+    public string recipeName;
+    public float baseCookingTime;
+    public List<RecipeStep> steps;
+    // ... any other recipe info
+}
+
+[System.Serializable]
+public class RecipeStep
+{
+    public string stepDescription;
+    public string toolName;
+    public List<IngredientItem> requiredIngredients;
+    // ...
+}
+
+[System.Serializable]
+public class IngredientItem
+{
+    public string itemName;
+    public Sprite itemIcon;
+    // ...
+}

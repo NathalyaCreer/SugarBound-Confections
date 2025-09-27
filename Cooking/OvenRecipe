@@ -1,0 +1,21 @@
+using UnityEngine;
+using System.Collections.Generic;
+
+[CreateAssetMenu(fileName = "NewOvenStep", menuName = "Cooking/Recipe Step/Oven")]
+public class OvenRecipe : RecipeStep
+{
+    public string requiredIngredientName;
+    public GameObject correctPrefab;
+    public GameObject incorrectPrefab;
+
+    public override bool CheckIngredients(List<IngredientItem> ingredients)
+    {
+        // Check if there is exactly one ingredient and it's the correct one.
+        return ingredients.Count == 1 && ingredients[0].ingredientName == requiredIngredientName;
+    }
+
+    public override GameObject GetOutputPrefab(bool success)
+    {
+        return success ? correctPrefab : incorrectPrefab;
+    }
+}

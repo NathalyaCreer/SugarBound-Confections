@@ -1,0 +1,16 @@
+using UnityEngine;
+
+public class CollectibleItem : MonoBehaviour
+{
+    public void OnCollected()
+    {
+        if (MissionManager.Instance.missions[MissionManager.Instance.currentMissionIndex] is CollectionMissionSO)
+        {
+            // Update the mission state on the Scriptable Object directly
+            (MissionManager.Instance.missions[MissionManager.Instance.currentMissionIndex] as CollectionMissionSO).CollectItem();
+            // Then check for completion
+            MissionManager.Instance.CheckForCollectionCompletion();
+        }
+        Destroy(gameObject);
+    }
+}

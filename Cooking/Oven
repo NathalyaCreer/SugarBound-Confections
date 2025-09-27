@@ -1,0 +1,164 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+
+public class Oven : KitchenTool
+{
+    [Header("Oven Settings")]
+    [Tooltip("Define all oven recipes using Scriptable Object assets.")]
+    public List<OvenRecipe> ovenRecipesList;
+
+    [Header("Audio Cues")]
+    public AudioClip bakingStartSound;
+    public AudioClip bakingLoopSound;
+    public AudioClip bakingCompleteSound;
+
+    [Header("Visual Effects")]
+    [Tooltip("The Meshrenderer of the stove part that will glow.")]
+    public Renderer stoveRenderer;
+    [Tooltip("The light component inside the oven")]
+    public Light ovenLight;
+    [Tooltip("The particle system for steam or heat effects.")]
+    public ParticleSystem steamParticles;
+
+    [Tooltip("The HDR color for the stove's glow when active")]
+    [ColorUsage(true, true)]
+    public Color stoveGlowColor = new Color(1.0f, 0.2f, 0.0f);
+
+    private Material stoveMaterialInstance;
+    private Color initialStoveColor;
+
+    private AudioSource audioSource;
+    private bool isBaking = false;
+    private Coroutine bakingCoroutine;
+    
+    // Removed: private bool isItemCooked;
+    // Removed: private Coroutine overcookCoroutine;
+
+    protected override void Awake()
+    {
+        base.Awake();
+        audioSource = GetComponent<AudioSource>();
+
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        if (stoveRenderer != null)
+        {
+            stoveMaterialInstance = stoveRenderer.material;
+            if (stoveMaterialInstance.HasProperty("_EmissionColor"))
+            {
+                initialStoveColor = stoveMaterialInstance.GetColor("_EmissionColor");
+            }
+        }
+        if (ovenLight != null) ovenLight.enabled = false;
+    }
+
+    public override void ProcessIngredients(RecipeStep recipeStep)
+    {
+        if (isBaking) return;
+
+        if (recipeStep is OvenRecipe ovenRecipe)
+        {
+            isBaking = true;
+            PlayAnimation("BakeTrigger");
+            bakingCoroutine = StartCoroutine(BakeRoutine(ovenRecipe));
+        }
+        else
+        {
+            Debug.LogWarning($"Oven received a recipe step that was not an OvenRecipe.", this);
+        }
+    }
+
+    private IEnumerator BakeRoutine(OvenRecipe recipe)
+    {
+        SetOvenEffects(true);
+
+        // --- Audio Logic ---
+        if (audioSource != null)
+        {
+            if (bakingStartSound != null) audioSource.PlayOneShot(bakingStartSound);
+            if (bakingLoopSound != null)
+            {
+                audioSource.clip = bakingLoopSound;
+                audioSource.loop = true;
+                audioSource.PlayDelayed(bakingStartSound != null ? bakingStartSound.length : 0f);
+            }
+        }
+
+        // Wait for the recipe's base cooking time
+        yield return new WaitForSeconds(recipe.baseCookingTime);
+
+        // --- Post-Bake Logic ---
+        if (audioSource != null)
+        {
+            audioSource.Stop();
+            if (bakingCompleteSound != null) audioSource.PlayOneShot(bakingCompleteSound);
+        }
+
+        // Remove the processed ingredient from the oven
+        if (containedIngredients.Any())
+        {
+            Destroy(containedIngredients.First().gameObject);
+            containedIngredients.RemoveAt(0);
+        }
+
+        // The step is complete. Get the successful output prefab.
+        GameObject outputPrefab = recipe.GetOutputPrefab(true);
+
+        // Notify the manager that this step is finished and provide the resulting item
+        CookingManager.Instance.OnRecipeStepCompleted(outputPrefab);
+
+        SetOvenEffects(false);
+        isBaking = false;
+        bakingCoroutine = null;
+    }
+
+    // Removed: OvercookRoutine()
+
+    private void SetOvenEffects(bool active)
+    {
+        if (ovenLight != null)
+        {
+            ovenLight.enabled = active;
+        }
+
+        if (stoveMaterialInstance != null && stoveMaterialInstance.HasProperty("_EmissionColor"))
+        {
+            stoveMaterialInstance.EnableKeyword("_EMISSION");
+            Color targetColor = active ? stoveGlowColor : initialStoveColor;
+            stoveMaterialInstance.SetColor("_EmissionColor", targetColor);
+        }
+
+        if (steamParticles != null)
+        {
+            if (active)
+            {
+                steamParticles.Play();
+            }
+            else
+            {
+                steamParticles.Stop();
+            }
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (bakingCoroutine != null)
+        {
+            StopCoroutine(bakingCoroutine);
+            bakingCoroutine = null;
+            isBaking = false;
+            SetOvenEffects(false);
+        }
+        // Removed: Logic for stopping overcookCoroutine
+    }
+    
+    // The Interact() method should not be overridden in this simpler version,
+    // as the item is simply spawned by the manager. Remove the override.
+    // If you need more complex interaction, it will need to be re-written.
+}

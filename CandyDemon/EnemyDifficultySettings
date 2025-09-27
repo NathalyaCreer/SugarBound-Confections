@@ -1,0 +1,27 @@
+using UnityEngine;
+using System.Collections.Generic;
+
+[CreateAssetMenu(fileName = "NewEnemySettings", menuName = "Enemy/Difficulty Settings")]
+public class EnemyDifficultySettings : ScriptableObject
+{
+    [Header("Boredom Settings")]
+    public float boredomIncreaseRate = 1f;
+    public float boredomThreshold = 80f;
+
+    [Header("Chasing Settings")]
+    public float detectionRadius = 10f;
+    public float chanceToRetreat = 0.2f;
+
+    [Header("Teleport Settings")]
+    public float teleportToPlayerRange = 5f;
+
+    [Header("AI Ability Modifiers")]
+    public List<AbilityWeightModifier> abilityWeightModifiers;
+
+    [System.Serializable]
+    public class AbilityWeightModifier
+    {
+        public string abilityName;
+        public float weightModifier = 1.0f;
+    }
+}

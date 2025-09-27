@@ -1,0 +1,46 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+
+public class MemorySystem : MonoBehaviour
+{
+    public static MemorySystem Instance;
+
+    public int maxMemoryEvents = 10;
+    private List<Memory> memoryEvents = new List<Memory>();
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void AddMemory(Memory newMemory)
+    {
+        memoryEvents.Add(newMemory);
+        // Ensure the list does not grow too large
+        if (memoryEvents.Count > maxMemoryEvents)
+        {
+            memoryEvents.RemoveAt(0);
+        }
+    }
+
+    public Memory? GetLastMemoryOfType(Memory.MemoryType type)
+    {
+        // Use LINQ to find the most recent memory of a specific type
+        return memoryEvents.LastOrDefault(m => m.type == type);
+    }
+
+    public List<Memory> GetAllMemoriesInTimeframe(float seconds)
+    {
+        // Get all memories that occurred within the last 'seconds'
+        float currentTime = Time.time;
+        return memoryEvents.Where(m => currentTime - m.timestamp <= seconds).ToList();
+    }
+}

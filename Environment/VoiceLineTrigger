@@ -1,0 +1,72 @@
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+
+[RequireComponent(typeof(AudioSource))]
+public class VoiceLineTrigger : MonoBehaviour
+{
+    // The specific interaction event to listen for
+    public InteractionEvents interactionType;
+
+    // The voice line clip to play
+    public AudioClip voiceLine;
+
+    private AudioSource audioSource;
+    private XRBaseInteractable interactable;
+
+    public enum InteractionEvents
+    {
+        OnGrab,
+        OnRelease,
+        OnSocketEnter,
+        OnSocketExit,
+        OnActivate,
+        OnDeactivate,
+        OnHoverEnter
+    }
+
+    void Awake()
+    {
+        audioSource = GetComponent<AudioSource>();
+        interactable = GetComponent<XRBaseInteractable>();
+
+        if (interactable == null)
+        {
+            Debug.LogError("XRBaseInteractable component not found on object with VoiceLineTrigger script.");
+            return;
+        }
+
+        // Subscribe to the appropriate event based on the selected type
+        switch (interactionType)
+        {
+            case InteractionEvents.OnGrab:
+                interactable.selectEntered.AddListener(OnTriggerEvent);
+                break;
+            case InteractionEvents.OnRelease:
+                interactable.selectExited.AddListener(OnTriggerEvent);
+                break;
+            case InteractionEvents.OnSocketEnter:
+                interactable.selectEntered.AddListener(OnTriggerEvent);
+                break;
+            case InteractionEvents.OnSocketExit:
+                interactable.selectExited.AddListener(OnTriggerEvent);
+                break;
+            case InteractionEvents.OnActivate:
+                interactable.activated.AddListener(OnTriggerEvent);
+                break;
+            case InteractionEvents.OnDeactivate:
+                interactable.deactivated.AddListener(OnTriggerEvent);
+                break;
+            case InteractionEvents.OnHoverEnter:
+                interactable.hoverEntered.AddListener(OnTriggerEvent);
+                break;
+        }
+    }
+
+    private void OnTriggerEvent(BaseInteractionEventArgs args)
+    {
+        if (audioSource != null && voiceLine != null)
+        {
+            audioSource.PlayOneShot(voiceLine);
+        }
+    }
+}

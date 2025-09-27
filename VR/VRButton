@@ -1,0 +1,34 @@
+using UnityEngine;
+using UnityEngine.Events;
+
+public class VRButton : MonoBehaviour
+{
+    public Transform buttonPusher;
+    public float pressedThreshold = 0.01f; // How far the button needs to move to count as a press
+    public UnityEvent onPressed;
+
+    private bool isPressed = false;
+    private Vector3 initialPosition;
+
+    void Start()
+    {
+        initialPosition = buttonPusher.localPosition;
+    }
+
+    void Update()
+    {
+        // Check if the button has been pressed past the threshold
+        if (buttonPusher.localPosition.y < initialPosition.y - pressedThreshold)
+        {
+            if (!isPressed)
+            {
+                isPressed = true;
+                onPressed.Invoke();
+            }
+        }
+        else
+        {
+            isPressed = false;
+        }
+    }
+}

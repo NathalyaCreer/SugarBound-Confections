@@ -1,0 +1,8 @@
+using UnityEngine;
+
+public abstract class RecipeStep : ScriptableObject
+{
+    public string toolName;
+    public abstract bool CheckIngredients(List<IngredientItem> ingredients);
+    public abstract GameObject GetOutputPrefab(bool success);
+}

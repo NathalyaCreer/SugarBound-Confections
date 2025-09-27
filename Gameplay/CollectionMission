@@ -1,0 +1,20 @@
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "New Collection Mission", menuName = "Mission/Collection")]
+public class CollectionMissionSO : MissionSO
+{
+    public int totalItemsToCollect;
+    [HideInInspector] // Hide from inspector because we'll update it dynamically
+    public int itemsCollected = 0;
+
+    public void CollectItem()
+    {
+        itemsCollected++;
+        Debug.Log($"Item collected! {itemsCollected}/{totalItemsToCollect}");
+    }
+
+    public override bool CheckCompletion()
+    {
+        return itemsCollected >= totalItemsToCollect;
+    }
+}

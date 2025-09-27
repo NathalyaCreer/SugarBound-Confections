@@ -1,0 +1,85 @@
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using System.Collections.Generic;
+
+public class KitchenTool : MonoBehaviour
+{
+    public string toolName;
+    public Transform ingredientSnapPoint;
+
+    // Use a Queue for a more robust "first-in, first-out" ingredient system
+    private Queue<IngredientItem> containedIngredients = new Queue<IngredientItem>();
+
+    private XRSocketInteractor socket;
+    protected Animator animator;
+
+    protected virtual void Awake()
+    {
+        socket = GetComponentInChildren<XRSocketInteractor>();
+        animator = GetComponent<Animator>();
+
+        if (socket == null)
+        {
+            Debug.LogError("KitchenTool could not find a socket interactor in children.", this);
+            return;
+        }
+
+        socket.selectEntered.AddListener(OnIngredientPlaced);
+        socket.selectExited.AddListener(OnIngredientRemoved);
+    }
+    
+    protected virtual void OnIngredientPlaced(SelectEnterEventArgs args)
+    {
+        IngredientItem ingredient = args.interactableObject.transform.GetComponent<IngredientItem>();
+        if (ingredient != null)
+        {
+            containedIngredients.Enqueue(ingredient);
+
+            // Notify the CookingManager via event
+            GameEvents.OnToolUsed?.Invoke(toolName, ingredient.ingredientName);
+        }
+    }
+    
+    protected virtual void OnIngredientRemoved(SelectExitEventArgs args)
+    {
+        IngredientItem ingredient = args.interactableObject.transform.GetComponent<IngredientItem>();
+        if (ingredient != null)
+        {
+            // The logic for removing an ingredient is more complex.
+            // You might need to check if the removed ingredient was the one needed for the current step.
+            // For now, this is a simple, non-minigame-specific removal.
+        }
+    }
+    
+    public IngredientItem RemoveFirstIngredient()
+    {
+        if(containedIngredients.Count > 0)
+        {
+            return containedIngredients.Dequeue();
+        }
+        return null;
+    }
+
+    public virtual void ProcessIngredients()
+    {
+        // This method remains a placeholder for specific tool logic.
+        // Child classes will override this.
+    }
+
+    protected void PlayAnimation(string trigger)
+    {
+        if (animator != null)
+        {
+            animator.SetTrigger(trigger);
+        }
+    }
+    
+    protected void TransformItem(GameObject oldItem, GameObject newItemPrefab)
+    {
+        if (oldItem != null)
+        {
+            Destroy(oldItem);
+            Instantiate(newItemPrefab, ingredientSnapPoint.position, ingredientSnapPoint.rotation);
+        }
+    }
+}

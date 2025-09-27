@@ -1,0 +1,38 @@
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+
+public class VRInventorySocket : MonoBehaviour
+{
+    public string ingredientName; // E.g., "Mushroom", "Herb"
+
+    private XRBaseInteractable currentInteractable;
+
+    void Start()
+    {
+        var socketInteractor = GetComponent<XRSocketInteractor>();
+        if (socketInteractor != null)
+        {
+            // Subscribe to the Select Entered event
+            socketInteractor.selectEntered.AddListener(OnItemPlaced);
+            // Subscribe to the Select Exited event
+            socketInteractor.selectExited.AddListener(OnItemRemoved);
+        }
+    }
+
+    private void OnItemPlaced(SelectEnterEventArgs args)
+    {
+        currentInteractable = args.interactableObject as XRBaseInteractable;
+        // Add the ingredient to the main inventory system
+        InventoryManager.Instance?.AddIngredient(ingredientName);
+    }
+
+    private void OnItemRemoved(SelectExitEventArgs args)
+    {
+        // Remove the ingredient from the main inventory system
+        if (currentInteractable != null)
+        {
+            InventoryManager.Instance?.StealRandomIngredient(); // Or a specific removal method
+            currentInteractable = null;
+        }
+    }
+}

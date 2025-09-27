@@ -1,0 +1,126 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+public class Microwave : KitchenTool
+{
+    [Header("Microwave Settings")]
+    public float cookTime = 3f;
+    private bool isCooking = false;
+
+    // This list will be visible and editable in the Unity Inspector.
+    [Tooltip("Define all possible outputs for ingredients cooked in this microwave.")]
+    public List<IngredientOutput> ingredientOutputList;
+
+    [Header("Audio Cues")]
+    public AudioClip cookingStartSound;
+    public AudioClip cookingLoopSound;
+    public AudioClip cookingCompleteSound;
+    private AudioSource audioSource;
+
+    // The dictionary is now private and populated at runtime for efficiency.
+    private Dictionary<string, IngredientOutput> ingredientOutputs = new Dictionary<string, IngredientOutput>();
+    
+    // Override the base Awake to set up the dictionary and audio source.
+    protected override void Awake()
+    {
+        // Call the base Awake method to find the socket.
+        base.Awake();
+
+        // Get the AudioSource component attached to this GameObject.
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            Debug.LogWarning("Microwave is missing an AudioSource component.", this);
+        }
+
+        // Populate the dictionary from the public list for fast lookups.
+        foreach (var output in ingredientOutputList)
+        {
+            if (!ingredientOutputs.ContainsKey(output.ingredientName))
+            {
+                ingredientOutputs.Add(output.ingredientName, output);
+            }
+        }
+    }
+
+    public override void ProcessIngredients()
+    {
+        if (containedIngredients.Count > 0 && !isCooking)
+        {
+            // Play the animation trigger.
+            PlayAnimation("MicrowaveTrigger");
+
+            if (audioSource != null)
+            {
+                // Play the starting sound as a one-shot
+                if (cookingStartSound != null)
+                {
+                    audioSource.PlayOneShot(cookingStartSound);
+                }
+
+                // Immediately start playing the looping cooking sound
+                if (cookingLoopSound != null)
+                {
+                    audioSource.clip = cookingLoopSound;
+                    audioSource.loop = true;
+                    audioSource.Play();
+                }
+            }
+
+            isCooking = true;
+            StartCoroutine(CookRoutine());
+
+        }
+    }
+
+    private IEnumerator CookRoutine()
+    {
+        IngredientItem ingredientToCook = containedIngredients.Peek();
+
+        if (ingredientOutputs.TryGetValue(ingredientToCook.ingredientName, out IngredientOutput output))
+        {
+            yield return new WaitForSeconds(cookTime);
+
+            //Stop looping Sound
+            if (audioSource != null)
+            {
+                audioSource.Stop();
+                audioSource.loop = false;
+
+                // Play the cooking complete sound.
+                if (cookingCompleteSound != null)
+                {
+                    audioSource.PlayOneShot(cookingCompleteSound);
+                }
+            }
+
+            GameEvents.OnToolUsed?.Invoke(toolName, ingredientToCook.ingredientName);
+            Destroy(containedIngredients.Dequeue().gameObject);
+
+            if (CookingManager.Instance != null && CookingManager.Instance.IsMinigameActive())
+            {
+                SpawnItem(output.correctPrefab);
+            }
+            else
+            {
+                SpawnItem(output.incorrectPrefab);
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Microwave has no output definition for {ingredientToCook.ingredientName}.");
+            Destroy(containedIngredients.Dequeue().gameObject);
+        }
+
+        isCooking = false;
+    }
+
+    private void SpawnItem(GameObject itemPrefab)
+    {
+        if (itemPrefab != null && ingredientSnapPoint != null)
+        {
+            Instantiate(itemPrefab, ingredientSnapPoint.position, ingredientSnapPoint.rotation);
+        }
+    }
+}

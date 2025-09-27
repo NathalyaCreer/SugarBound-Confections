@@ -1,0 +1,52 @@
+using UnityEngine;
+using TMPro; // Assuming TextMeshPro for text
+using UnityEngine.UI; // Assuming UI.Image for the timer
+
+public class MinigameUI : MonoBehaviour
+{
+    public GameObject recipeCanvas;
+    public TextMeshProUGUI recipeNameText;
+    public TextMeshProUGUI stepText;
+    public Image timerFillImage;
+    public Color timerNormalColor = Color.green;
+    public Color timerDangerColor = Color.red;
+
+    void OnEnable()
+    {
+        GameEvents.OnRecipeStart += OnRecipeStartHandler;
+        GameEvents.OnTimerUpdate += OnTimerUpdateHandler;
+        GameEvents.OnRecipeProgress += OnRecipeProgressHandler;
+        GameEvents.OnMinigameEnd += OnMinigameEndHandler;
+    }
+
+    void OnDisable()
+    {
+        GameEvents.OnRecipeStart -= OnRecipeStartHandler;
+        GameEvents.OnTimerUpdate -= OnTimerUpdateHandler;
+        GameEvents.OnRecipeProgress -= OnRecipeProgressHandler;
+        GameEvents.OnMinigameEnd -= OnMinigameEndHandler;
+    }
+
+    private void OnRecipeStartHandler(Recipe recipe)
+    {
+        recipeCanvas.SetActive(true);
+        recipeNameText.text = recipe.recipeName;
+        stepText.text = $"Step 1 of {recipe.steps.Count}";
+    }
+
+    private void OnTimerUpdateHandler(float timeRemaining, float maxTime)
+    {
+        timerFillImage.fillAmount = timeRemaining / maxTime;
+        timerFillImage.color = Color.Lerp(timerDangerColor, timerNormalColor, timerFillImage.fillAmount);
+    }
+
+    private void OnRecipeProgressHandler(int currentStep, int totalSteps)
+    {
+        stepText.text = $"Step {currentStep + 1} of {totalSteps}";
+    }
+
+    private void OnMinigameEndHandler(bool success)
+    {
+        recipeCanvas.SetActive(false);
+    }
+}

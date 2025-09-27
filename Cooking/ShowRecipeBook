@@ -1,0 +1,72 @@
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+
+[RequireComponent(typeof(XRGrabInteractable))]
+public class ShowRecipeBook : MonoBehaviour
+{
+    [Tooltip("The book's UI canvas.")]
+    public GameObject bookUI;
+    
+    private XRGrabInteractable grabInteractable;
+    private Animator bookAnimator;
+    private bool isBookOpen = false;
+
+    void Awake()
+    {
+        grabInteractable = GetComponent<XRGrabInteractable>();
+        if (grabInteractable == null)
+        {
+            Debug.LogError("ShowRecipeBook requires an XRGrabInteractable component.", this);
+            return;
+        }
+
+        bookAnimator = GetComponent<Animator>();
+        if (bookAnimator == null)
+        {
+            Debug.LogError("ShowRecipeBook requires an Animator component to control the book model.", this);
+            return;
+        }
+
+        grabInteractable.activated.AddListener(ToggleBookUI);
+    }
+    
+    void Start()
+    {
+        // Ensure the UI is hidden on start.
+        if (bookUI != null)
+        {
+            bookUI.SetActive(false);
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (grabInteractable != null)
+        {
+            grabInteractable.activated.RemoveListener(ToggleBookUI);
+        }
+    }
+
+    private void ToggleBookUI(ActivateEventArgs args)
+    {
+        isBookOpen = !isBookOpen;
+        
+        if (isBookOpen)
+        {
+            bookAnimator.SetBool("IsOpen", true);
+            if (bookUI != null)
+            {
+                // UI is revealed by the animation, but we can enable it here.
+                bookUI.SetActive(true);
+            }
+        }
+        else
+        {
+            bookAnimator.SetBool("IsOpen", false);
+            if (bookUI != null)
+            {
+                bookUI.SetActive(false);
+            }
+        }
+    }
+}

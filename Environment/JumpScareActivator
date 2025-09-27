@@ -1,0 +1,81 @@
+using UnityEngine;
+using System.Collections;
+
+public class JumpScareActivator : MonoBehaviour
+{
+    private Animator animator;
+    private AudioSource audioSource;
+    private bool hasPlayed = false;
+
+    [Header("Activation Settings")]
+    public float activationRange = 5f; // Distance from the player to activate
+    public Transform playerTransform; // Assigned via RoomManager or directly
+    public bool requireLineOfSight = true; // Does the player need to be looking at it?
+    public float lookAngle = 30f; // Cone of vision for the player
+    public LayerMask obstacleLayer; // Layers that block line of sight
+
+    void Awake()
+    {
+        animator = GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
+        if (animator != null)
+        {
+            // You can also ensure the animator is in a non-scare state initially
+        }
+    }
+
+    public void CheckForPlayerProximity()
+    {
+        if (hasPlayed) return;
+
+        if (playerTransform == null)
+        {
+            Debug.LogWarning("Player transform not assigned to JumpScareActivator.");
+            return;
+        }
+
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+        if (distanceToPlayer <= activationRange)
+        {
+            if (!requireLineOfSight || IsInLineOfSight())
+            {
+                ActivateScare();
+            }
+        }
+    }
+
+    private bool IsInLineOfSight()
+    {
+        Vector3 directionToScare = (transform.position - playerTransform.position).normalized;
+        float angle = Vector3.Angle(playerTransform.forward, directionToScare);
+
+        if (angle < lookAngle)
+        {
+            // Check for obstacles between the player and the scare
+            RaycastHit hit;
+            if (Physics.Raycast(playerTransform.position, directionToScare, out hit, activationRange, obstacleLayer))
+            {
+                // If the ray hits something other than the scare object itself, it's blocked.
+                if (hit.transform != transform)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void ActivateScare()
+    {
+        if (hasPlayed) return;
+
+        Debug.Log("Jump scare activated!");
+        if (animator) animator.SetTrigger("Scare");
+        if (audioSource) audioSource.Play();
+        hasPlayed = true;
+
+        // Optionally, destroy the object after a brief delay
+        // Destroy(gameObject, 5f);
+    }
+}

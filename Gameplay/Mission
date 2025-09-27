@@ -1,0 +1,28 @@
+using UnityEngine;
+using System.Collections.Generic;
+
+[CreateAssetMenu(fileName = "NewMission", menuName = "Story/Mission")]
+public class MissionSO : ScriptableObject
+{
+    [Header("Mission Details")]
+    [Tooltip("The title displayed to the player.")]
+    public string missionTitle;
+    [TextArea]
+    [Tooltip("A brief description of the mission's objective for the player.")]
+    public string missionDescription;
+
+    [Header("Mission Completion")]
+    [Tooltip("The type of event that will complete this mission.")]
+    public MissionCompletionType completionType;
+
+    // Fields used by specific mission types
+    [Tooltip("The name of the trigger for 'Trigger' missions.")]
+    public string requiredTriggerName;
+
+    [Tooltip("The names of ingredients needed for 'Collection' or 'Baking' missions.")]
+    public List<string> requiredIngredients;
+
+    [Header("Rewards")]
+    [Tooltip("The prefab that will be unlocked or spawned upon mission completion.")]
+    public GameObject unlockablePrefab;
+}

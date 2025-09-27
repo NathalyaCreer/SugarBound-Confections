@@ -1,0 +1,51 @@
+using UnityEngine;
+
+public class AnalogClock : MonoBehaviour
+{
+    public GameManager gameManager;
+    public Transform hourHandPivot;
+    public Transform minuteHandPivot;
+    public Transform secondHandPivot;
+
+    private void Update()
+    {
+        if (gameManager == null)
+        {
+            Debug.LogError("GameManager not assigned to AnalogClock!");
+            return;
+        }
+
+        // Get the current game time
+        float gameTime = gameManager.gameTime;
+
+        // Calculate the hours, minutes, and seconds from the total game time
+        float hours = gameTime;
+        float minutes = (gameTime - Mathf.Floor(gameTime)) * 60f;
+        float seconds = (minutes - Mathf.Floor(minutes)) * 60f;
+
+        // The rotation values are based on 360 degrees.
+        // Each hour is 30 degrees (360 / 12)
+        // Each minute is 6 degrees (360 / 60)
+        // Each second is 6 degrees (360 / 60)
+
+        // Rotate the hands
+        if (hourHandPivot != null)
+        {
+            // The hour hand also needs to move with the minutes
+            float hourRotation = (hours % 12) * 30f + (minutes / 60f) * 30f;
+            hourHandPivot.localRotation = Quaternion.Euler(0, 0, hourRotation);
+        }
+
+        if (minuteHandPivot != null)
+        {
+            float minuteRotation = minutes * 6f;
+            minuteHandPivot.localRotation = Quaternion.Euler(0, 0, minuteRotation);
+        }
+
+        if (secondHandPivot != null)
+        {
+            float secondRotation = seconds * 6f;
+            secondHandPivot.localRotation = Quaternion.Euler(0, 0, secondRotation);
+        }
+    }
+}

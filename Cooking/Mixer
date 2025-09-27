@@ -1,0 +1,125 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq; // Required for LINQ extensions like OrderBy and SequenceEqual
+
+public class Mixer : KitchenTool
+{
+    [Header("Mixer Settings")]
+    public float mixTime = 2f;
+    private bool isMixing = false;
+    
+    // A list of all the recipes this mixer can create.
+    public List<MixerRecipeSO> allMixerRecipes;
+
+    [Header("Audio Cues")]
+    public AudioClip mixStartSound;
+    public AudioClip mixLoopSound;
+    public AudioClip mixCompleteSound;
+
+    private AudioSource audioSource;
+    
+    protected override void Awake()
+    {
+        base.Awake();
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            Debug.LogWarning("Mixer is missing an AudioSource component.", this);
+        }
+    }
+
+    public override void ProcessIngredients()
+    {
+        if (containedIngredients.Count > 0 && !isMixing)
+        {
+            // Check for a matching recipe before starting.
+            MixerRecipeSO matchedRecipe = FindMatchingRecipe();
+
+            if (matchedRecipe != null)
+            {
+                isMixing = true;
+
+                PlayAnimation("MixerTrigger");
+                if (audioSource != null)
+                {
+                    if (mixStartSound != null) audioSource.PlayOneShot(mixStartSound);
+                    if (mixLoopSound != null)
+                    {
+                        audioSource.clip = mixLoopSound;
+                        audioSource.loop = true;
+                        audioSource.Play();
+                    }
+                }
+
+                StartCoroutine(MixRoutine(matchedRecipe));
+            }
+            else
+            {
+                Debug.LogWarning("No recipe matches the current ingredients in the mixer.");
+            }
+        }
+    }
+
+    private MixerRecipeSO FindMatchingRecipe()
+    {
+        // Get the names of the ingredients in the correct order.
+        List<string> currentIngredientNames = containedIngredients.Select(i => i.ingredientName).ToList();
+
+        // Sort both the current ingredients and the recipe ingredients for order-independent comparison.
+        currentIngredientNames.Sort();
+
+        foreach (var recipe in allMixerRecipes)
+        {
+            List<string> recipeIngredientNames = recipe.requiredIngredients.OrderBy(n => n).ToList();
+            
+            // Check if the ingredient lists are the same size and contain the same items.
+            if (currentIngredientNames.SequenceEqual(recipeIngredientNames))
+            {
+                return recipe;
+            }
+        }
+        return null;
+    }
+
+    private IEnumerator MixRoutine(MixerRecipeSO recipe)
+    {
+        yield return new WaitForSeconds(mixTime);
+
+        if (audioSource != null)
+        {
+            audioSource.Stop();
+            audioSource.loop = false;
+            if (mixCompleteSound != null) audioSource.PlayOneShot(mixCompleteSound);
+        }
+        
+        // Notify the CookingManager via the event system, including the recipe name
+        GameEvents.OnToolUsed?.Invoke(toolName, recipe.recipeName);
+
+        // Consume ingredients
+        while (containedIngredients.Count > 0)
+        {
+            Destroy(containedIngredients.Dequeue().gameObject);
+        }
+        
+        // Check the outcome and spawn the correct item
+        if (CookingManager.Instance != null && CookingManager.Instance.IsMinigameActive())
+        {
+            SpawnItem(recipe.correctPrefab);
+        }
+        else
+        {
+            SpawnItem(recipe.incorrectPrefab);
+        }
+        
+        isMixing = false;
+    }
+    
+    private void SpawnItem(GameObject itemPrefab)
+    {
+        if (itemPrefab != null && ingredientSnapPoint != null)
+        {
+            Instantiate(itemPrefab, ingredientSnapPoint.position, ingredientSnapPoint.rotation);
+        }
+    }
+}

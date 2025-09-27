@@ -1,0 +1,41 @@
+using System;
+using System.Collections.Generic; // Required for List<T>
+using UnityEngine; // Required for Recipe, KitchenTool, etc.
+
+public static class GameEvents
+{
+    // --- Cooking Minigame Events (Refactored) ---
+
+    // This is the major change: Passes the tool and a list of ingredients directly
+    // instead of just strings. This is more robust and efficient.
+    public static event Action<KitchenTool, List<IngredientItem>> OnToolUsed;
+
+    // New event to allow the UI to listen for timer updates.
+    public static event Action<float, float> OnTimerUpdate;
+
+    public static event Action<Recipe> OnRecipeStart;
+    public static event Action<int, int> OnRecipeProgress; // currentStep, totalSteps
+    public static event Action<bool> OnMinigameEnd; // true for pass, false for fail
+
+    // --- Mission System Events (Preserved from your script) ---
+    public static event Action OnMissionInterface;
+    public static event Action<MissionCompletionType, string> OnMissionProgress;
+
+    /// <summary>
+    /// Helper method to trigger the mission progress event.
+    /// </summary>
+    public static void TriggerMissionProgress(MissionCompletionType type, string context = "")
+    {
+        OnMissionProgress?.Invoke(type, context);
+    }
+}
+
+// This enum is preserved as part of your mission system
+public enum MissionCompletionType
+{
+    None,
+    Trigger,
+    Baking,
+    Collecting,
+    DefeatingEnemies,
+}

@@ -1,0 +1,29 @@
+using UnityEngine;
+
+public class PlayerLocomotion : MonoBehaviour
+{
+    // References to your locomotion components
+    // public ContinuousMoveProviderBase continuousMoveProvider;
+    // public TeleportationProvider teleportationProvider;
+
+    public void DisableMovement()
+    {
+        // Disable locomotion components
+        // continuousMoveProvider.enabled = false;
+        // teleportationProvider.enabled = false;
+    }
+
+    public void EnableMovement()
+    {
+        // Enable locomotion components
+        // continuousMoveProvider.enabled = true;
+        // teleportationProvider.enabled = true;
+    }
+
+    public void TeleportPlayer(Transform target)
+    {
+        // Teleport the XR Origin to the target position
+        transform.position = target.position;
+        transform.rotation = target.rotation;
+    }
+}

@@ -1,0 +1,31 @@
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "ForceMissionSkipAbility", menuName = "AI/Ability/Force Mission Skip")]
+public class ForceMissionSkipAbilitySO : AIAbilitySO
+{
+    public override bool CanExecute(EnemyStateManager enemy)
+    {
+        // Conditions for skipping a mission
+        return enemy.canChangeMission && enemy.currentBoredom >= enemy.boredomThreshold * 0.75f;
+    }
+
+    public override void Execute(EnemyStateManager enemy)
+    {
+        // Trigger mission advancement through the MissionManager
+        if (MissionManager.Instance != null)
+        {
+            MissionManager.Instance.ForceNextMission();
+        }
+    }
+
+    public override float GetDynamicWeight(EnemyStateManager enemy)
+    {
+        float dynamicWeight = base.GetDynamicWeight(enemy);
+        // Bonus weight if the player is near the safe object
+        if (enemy.IsPlayerNearSafeObject())
+        {
+            dynamicWeight += enemy.safeObjectWeightBonus;
+        }
+        return dynamicWeight;
+    }
+}

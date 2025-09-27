@@ -1,0 +1,47 @@
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+
+public class VRCookingSocket : MonoBehaviour
+{
+    private XRSocketInteractor socketInteractor;
+
+    void Awake()
+    {
+        socketInteractor = GetComponent<XRSocketInteractor>();
+        if (socketInteractor == null)
+        {
+            Debug.LogError("VRCookingSocket requires an XRSocketInteractor component to be attached.", this);
+            return;
+        }
+
+        socketInteractor.selectEntered.AddListener(OnIngredientPlaced);
+    }
+    
+    void OnDestroy()
+    {
+        // Always clean up event listeners to prevent memory leaks,
+        // especially important when objects might be destroyed and recreated.
+        if (socketInteractor != null)
+        {
+            socketInteractor.selectEntered.RemoveListener(OnIngredientPlaced);
+        }
+    }
+
+    private void OnIngredientPlaced(SelectEnterEventArgs args)
+    {
+        // 1. Get the IngredientItem component, not just the name.
+        if (args.interactableObject.transform.TryGetComponent(out IngredientItem ingredient))
+        {
+            // 2. Add the component itself to the cooking station.
+            CookingStationManager.Instance?.AddIngredient(ingredient);
+
+            // 3. Deactivate the GameObject instead of destroying it.
+            //    Let a manager or object pool handle the actual cleanup.
+            args.interactableObject.transform.gameObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning($"Object named '{args.interactableObject.transform.name}' placed in socket has no IngredientItem component.", args.interactableObject.transform);
+        }
+    }
+}

@@ -1,0 +1,24 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+
+[CreateAssetMenu(fileName = "NewMixerStep", menuName = "Cooking/Recipe Step/Mixer")]
+public class MixerRecipe : RecipeStep
+{
+    public List<string> requiredIngredientNames;
+    public GameObject correctPrefab;
+    public GameObject incorrectPrefab;
+
+    public override bool CheckIngredients(List<IngredientItem> ingredients)
+    {
+        // Check if the ingredients match the required list.
+        List<string> ingredientNames = ingredients.Select(i => i.ingredientName).OrderBy(n => n).ToList();
+        List<string> requiredNames = requiredIngredientNames.OrderBy(n => n).ToList();
+        return ingredientNames.SequenceEqual(requiredNames);
+    }
+    
+    public override GameObject GetOutputPrefab(bool success)
+    {
+        return success ? correctPrefab : incorrectPrefab;
+    }
+}

@@ -1,0 +1,145 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+
+public class CookingManager : MonoBehaviour
+{
+    public static CookingManager Instance;
+
+    [Header("Minigame Settings")]
+    public Recipe[] allRecipes;
+    public Transform bakingStationTeleportPoint;
+    public Transform outputSpawnPoint;
+
+    [Header("Failure Settings")]
+    public int maxFailures = 3;
+    private int currentFailures = 0;
+
+    private Recipe currentRecipe;
+    private int currentStepIndex = 0;
+    // Removed: private float recipeTimer;
+    private bool isMinigameActive = false;
+
+    [SerializeField] private PlayerLocomotion playerLocomotion;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void OnEnable()
+    {
+        GameEvents.OnToolUsed += OnToolUsedEventHandler;
+    }
+
+    void OnDisable()
+    {
+        GameEvents.OnToolUsed -= OnToolUsedEventHandler;
+    }
+
+    private void OnToolUsedEventHandler(KitchenTool tool, List<IngredientItem> ingredients)
+    {
+        if (!isMinigameActive) return;
+
+        if (currentStepIndex < currentRecipe.steps.Count)
+        {
+            RecipeStep currentStep = currentRecipe.steps[currentStepIndex];
+
+            if (tool.toolName == currentStep.toolName && currentStep.CheckIngredients(ingredients))
+            {
+                tool.ProcessIngredients(currentStep);
+            }
+            else
+            {
+                FailMinigame("Incorrect tool or ingredient for this step.");
+            }
+        }
+    }
+
+    public void OnRecipeStepCompleted(GameObject outputPrefab)
+    {
+        if (outputPrefab != null)
+        {
+            Instantiate(outputPrefab, outputSpawnPoint.position, outputSpawnPoint.rotation);
+        }
+
+        currentStepIndex++;
+
+        if (currentStepIndex >= currentRecipe.steps.Count)
+        {
+            FinishMinigame();
+        }
+        else
+        {
+            GameEvents.OnRecipeProgress?.Invoke(currentStepIndex, currentRecipe.steps.Count);
+        }
+    }
+
+    public void InitiateBakingMinigame()
+    {
+        if (isMinigameActive || allRecipes.Length == 0) return;
+
+        isMinigameActive = true;
+        currentRecipe = allRecipes[Random.Range(0, allRecipes.Length)];
+        currentStepIndex = 0;
+
+        // Removed: recipeTimer logic
+
+        playerLocomotion?.TeleportPlayer(bakingStationTeleportPoint);
+        playerLocomotion?.DisableMovement();
+
+        GameEvents.OnRecipeStart?.Invoke(currentRecipe);
+
+        Debug.Log("Minigame initiated!");
+    }
+
+    public bool IsMinigameActive()
+    {
+        return isMinigameActive;
+    }
+
+    public void OvercookItem()
+    {
+        if (isMinigameActive)
+        {
+            FailMinigame("overcooked");
+        }
+    }
+
+    // Removed: Update() method for the timer
+
+    private void FinishMinigame()
+    {
+        Debug.Log("Minigame finished successfully!");
+        isMinigameActive = false;
+        GameEvents.OnMinigameEnd?.Invoke(true);
+        EndMinigameCleanup();
+    }
+
+    private void FailMinigame(string reason)
+    {
+        Debug.Log("Minigame failed due to: " + reason);
+        isMinigameActive = false;
+        currentFailures++;
+        GameEvents.OnMinigameEnd?.Invoke(false);
+
+        if (currentFailures >= maxFailures)
+        {
+            Debug.Log("Max failures reached. Game over!");
+        }
+
+        EndMinigameCleanup();
+    }
+
+    private void EndMinigameCleanup()
+    {
+        playerLocomotion?.EnableMovement();
+    }
+}

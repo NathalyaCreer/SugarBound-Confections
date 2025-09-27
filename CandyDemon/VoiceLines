@@ -1,0 +1,7 @@
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "NewVoiceLines", menuName = "Enemy/Voice Lines")]
+public class VoiceLines : ScriptableObject
+{
+    public AudioClip[] clips;
+}

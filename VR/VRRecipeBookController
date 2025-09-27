@@ -1,0 +1,102 @@
+using UnityEngine;
+using TMPro; // Make sure to use TextMeshPro for VR-ready text
+using System.Collections.Generic;
+
+public class VRRecipeBookController : MonoBehaviour
+{
+    [Header("UI References")]
+    public GameObject bookContainer;
+    public TextMeshPro recipeTitleText;
+    public TextMeshPro recipeDescriptionText;
+    public Transform ingredientsParent; // Parent object for ingredient icons
+    public GameObject ingredientIconPrefab; // Prefab for displaying an ingredient
+
+    [Header("Navigation Buttons")]
+    public GameObject nextButton;
+    public GameObject prevButton;
+
+    private List<RecipeSO> allRecipes;
+    private int currentPageIndex = 0;
+
+    void Start()
+    {
+        // Get the list of all recipes from the CookingManager instance
+        if (CookingManager.Instance != null)
+        {
+            allRecipes = new List<RecipeSO>(CookingManager.Instance.allRecipes);
+        }
+        else
+        {
+            Debug.LogError("CookingManager instance not found. Cannot populate recipe book.");
+            return;
+        }
+
+        // Initially display the first recipe
+        UpdateRecipePage();
+    }
+
+    // Call this method when the player opens the book
+    public void OpenBook()
+    {
+        bookContainer.SetActive(true);
+        UpdateRecipePage();
+    }
+
+    // Call this method when the player closes the book
+    public void CloseBook()
+    {
+        bookContainer.SetActive(false);
+    }
+
+    public void NextPage()
+    {
+        if (currentPageIndex < allRecipes.Count - 1)
+        {
+            currentPageIndex++;
+            UpdateRecipePage();
+        }
+    }
+
+    public void PreviousPage()
+    {
+        if (currentPageIndex > 0)
+        {
+            currentPageIndex--;
+            UpdateRecipePage();
+        }
+    }
+
+    private void UpdateRecipePage()
+    {
+        if (allRecipes == null || allRecipes.Count == 0)
+            return;
+
+        // Ensure the index is valid
+        currentPageIndex = Mathf.Clamp(currentPageIndex, 0, allRecipes.Count - 1);
+
+        RecipeSO recipe = allRecipes[currentPageIndex];
+
+        // Update UI elements with the new recipe data
+        recipeTitleText.text = recipe.recipeName;
+        recipeDescriptionText.text = recipe.steps[0].stepDescription; // Display the first step as the description
+
+        // Clear and repopulate ingredient icons
+        foreach (Transform child in ingredientsParent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        foreach (var ingredient in recipe.steps[0].requiredIngredients)
+        {
+            GameObject icon = Instantiate(ingredientIconPrefab, ingredientsParent);
+            // Assuming ingredientIconPrefab has a UI Image component for the sprite
+            icon.GetComponent<Renderer>().material.mainTexture = ingredient.itemIcon.texture;
+            // Optionally, add a TextMeshPro component to display the item name
+            // icon.GetComponentInChildren<TextMeshPro>().text = ingredient.itemName;
+        }
+
+        // Update navigation button visibility
+        prevButton.SetActive(currentPageIndex > 0);
+        nextButton.SetActive(currentPageIndex < allRecipes.Count - 1);
+    }
+}

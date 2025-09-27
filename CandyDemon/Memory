@@ -1,0 +1,17 @@
+using UnityEngine;
+
+[System.Serializable]
+public struct Memory
+{
+    public Vector3 location;
+    public float timestamp;
+    public MemoryType type;
+
+    public enum MemoryType
+    {
+        PlayerSighted,
+        SoundDetected,
+        ObjectInteracted,
+        LightSwitchFlipped
+    }
+}

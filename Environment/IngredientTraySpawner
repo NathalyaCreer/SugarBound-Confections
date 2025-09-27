@@ -1,0 +1,99 @@
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using System.Collections.Generic;
+
+public class IngredientTraySpawner : MonoBehaviour
+{
+    public string ingredientName; // E.g., "Flour"
+    public GameObject ingredientPrefab;
+
+    [Header("Tray Visuals")]
+    public int maxItems = 5;
+    public GameObject[] visualItems; // The visual representations of the items
+
+    [Header("Spawn Settings")]
+    public Transform spawnPoint; // Position where the new grabbable ingredient appears
+    public float respawnTime = 10f;
+
+    private int currentItems;
+    private float respawnTimer;
+
+    void Start()
+    {
+        currentItems = maxItems;
+        respawnTimer = respawnTime;
+        UpdateVisuals();
+    }
+
+    void Update()
+    {
+        if (currentItems < maxItems)
+        {
+            respawnTimer -= Time.deltaTime;
+            if (respawnTimer <= 0)
+            {
+                currentItems++;
+                respawnTimer = respawnTime;
+                UpdateVisuals();
+            }
+        }
+    }
+
+    // This method is called by the XR Simple Interactable on the tray.
+    public void GrabIngredient(SelectEnterEventArgs args)
+    {
+        if (currentItems > 0)
+        {
+            GameObject newIngredient = Instantiate(ingredientPrefab, spawnPoint.position, spawnPoint.rotation);
+            currentItems--;
+            UpdateVisuals();
+            
+            // Immediately have the interactor grab the spawned item
+            if (args.interactorObject is XRBaseInteractor interactor)
+            {
+                XRGrabInteractable grabInteractable = newIngredient.GetComponent<XRGrabInteractable>();
+                if (grabInteractable != null)
+                {
+                    interactor.StartManualInteraction(grabInteractable);
+                }
+            }
+        }
+    }
+    
+    // Call this method from an external script (e.g., CookingManager) to restock
+    public void RestockItem()
+    {
+        if (currentItems < maxItems)
+        {
+            currentItems++;
+            UpdateVisuals();
+        }
+    }
+
+    private void UpdateVisuals()
+    {
+        if (visualItems == null || visualItems.Length != maxItems + 1)
+        {
+            Debug.LogError($"Visual items array for {ingredientName} tray is not configured correctly. Size should be {maxItems + 1}.");
+            return;
+        }
+
+        // Deactivate all visual representations
+        for (int i = 0; i < visualItems.Length; i++)
+        {
+            if (visualItems[i] != null)
+            {
+                visualItems[i].SetActive(false);
+            }
+        }
+        
+        // Activate the correct visual representation
+        if (currentItems >= 0 && currentItems < visualItems.Length)
+        {
+            if (visualItems[currentItems] != null)
+            {
+                visualItems[currentItems].SetActive(true);
+            }
+        }
+    }
+}

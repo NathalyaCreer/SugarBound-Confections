@@ -1,0 +1,50 @@
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using System.Collections;
+
+public class TeleportDoor : MonoBehaviour
+{
+    public Transform kitchenTeleportPoint;
+    public float teleportDelay = 1.5f;
+    private Animator doorAnimator;
+    private bool hasTeleported = false;
+
+    void Awake()
+    {
+        doorAnimator = GetComponent<Animator>();
+    }
+
+    // Called when the player opens or interacts with the door
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player") && !hasTeleported)
+        {
+            hasTeleported = true;
+            if (doorAnimator != null)
+            {
+                doorAnimator.SetTrigger("OpenDoor"); // Assuming you have an "OpenDoor" trigger in your Animator
+            }
+            StartCoroutine(TeleportPlayer(other.transform));
+        }
+    }
+
+    private IEnumerator TeleportPlayer(Transform playerTransform)
+    {
+        // Optional: Fade screen to black for a smooth transition
+        // You would need a separate script for a fade effect
+        // ScreenFader.Instance.FadeOut();
+
+        yield return new WaitForSeconds(teleportDelay);
+
+        // Teleport the player
+        playerTransform.position = kitchenTeleportPoint.position;
+        playerTransform.rotation = kitchenTeleportPoint.rotation;
+
+        // Stop the teleporting behavior to prevent immediate re-teleportation
+        // This door will stay open until destroyed
+        Destroy(gameObject, 5f); // Destroy the door after a few seconds
+
+        // Optional: Fade screen back in
+        // ScreenFader.Instance.FadeIn();
+    }
+}

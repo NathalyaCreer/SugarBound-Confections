@@ -1,0 +1,93 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System;
+
+public class IngredientStorage : MonoBehaviour
+{
+    private Dictionary<string, int> ingredients = new Dictionary<string, int>();
+    public event Action OnIngredientsUpdated;
+
+    public bool TryAddIngredient(string ingredientName)
+    {
+        if (string.IsNullOrEmpty(ingredientName))
+        {
+            Debug.LogWarning("Cannot add ingredient with an empty name.");
+            return false;
+        }
+
+        if (ingredients.ContainsKey(ingredientName))
+        {
+            ingredients[ingredientName]++;
+        }
+        else
+        {
+            ingredients.Add(ingredientName, 1);
+        }
+
+        Debug.Log($"Added {ingredientName}. Total: {ingredients[ingredientName]}");
+        OnIngredientsUpdated?.Invoke();
+        return true;
+    }
+
+    public bool HasAllRequiredIngredients(List<IngredientItem> requiredItems)
+    {
+        if(requiredItems == null || requiredItems.Count == 0) return true;
+        if (requiredIngredients.Count != ingredients.Count) return false;
+
+        foreach (var requireItem in requiredItems)
+        {
+           if (!ingredients.CountainsKey(requiredItem.itemName) || ingredients[requiredItem.itemName] <= 0)
+           {
+            return false;
+           }
+        }
+        return true;
+    }
+
+    public void ConsumeIngredients(List<IngredientItem> requiredItems)
+    {
+        if (requiredItems == null) return;
+
+        // Convert the list of IngredientItem to a list of strings to consume them.
+        List<string> requiredIngredientNames = requiredItems.Select(item => item.itemName).ToList();
+
+        foreach (string ingredientName in requiredIngredientNames)
+        {
+            if (ingredients.ContainsKey(ingredientName))
+            {
+                ingredients[ingredientName]--;
+                if (ingredients[ingredientName] <= 0)
+                {
+                    ingredients.Remove(ingredientName);
+                }
+            }
+        }
+        OnIngredientsUpdated?.Invoke();
+    }
+
+    public string StealRandomIngredient()
+    {
+        if (ingredients.Count == 0)
+        {
+            return null;
+        }
+
+        List<string> keys = new List<string>(ingredients.Keys);
+        string stolenIngredient = keys[UnityEngine.Random.Range(0, keys.Count)];
+        
+        ingredients[stolenIngredient]--;
+        if (ingredients[stolenIngredient] <= 0)
+        {
+            ingredients.Remove(stolenIngredient);
+        }
+
+        OnIngredientsUpdated?.Invoke();
+        return stolenIngredient;
+    }
+
+    public void ClearAllIngredients()
+    {
+        ingredients.Clear();
+        OnIngredientsUpdated?.Invoke();
+    }
+}

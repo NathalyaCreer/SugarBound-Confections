@@ -1,0 +1,9 @@
+using UnityEngine;
+
+[System.Serializable]
+public class IngredientOutput : MonoBehavior
+{
+    public string ingredientName;
+    public GameObject correctPrefab;
+    public GameObject incorrectPrefab;
+}
