@@ -1,0 +1,116 @@
+using UnityEngine;
+using TMPro;
+
+public class MissionManager : MonoBehaviour
+{
+    public static MissionManager Instance;
+
+    public TextMeshProUGUI objectiveText;
+    public MissionSO[] missions;
+    private int currentMissionIndex = 0;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void OnEnable()
+    {
+        GameEvents.OnMissionProgress += ProgressMission;
+    }
+
+    void OnDisable()
+    {
+        GameEvents.OnMissionProgress -= ProgressMission;
+    }
+
+    void Start()
+    {
+        if (objectiveText == null)
+        {
+            Debug.LogError("Objective Text not assigned in the MissionManager!");
+            this.enabled = false;
+            return;
+        }
+        if (missions.Length == 0)
+        {
+            objectiveText.text = "No missions available.";
+            this.enabled = false;
+            return;
+        }
+
+        UpdateMissionUI();
+    }
+
+    public void ProgressMission(MissionCompletionType eventType, string eventContext = "")
+    {
+        if (currentMissionIndex >= missions.Length) return;
+
+        var currentMission = missions[currentMissionIndex];
+
+        if (eventType == currentMission.completionType)
+        {
+            if (eventType == MissionCompletionType.Trigger && eventContext != currentMission.requiredTriggerName)
+            {
+                return; // Not the right trigger
+            }
+
+            CompleteMission();
+        }
+    }
+
+    private void CompleteMission()
+    {
+        Debug.Log("Mission Completed: " + missions[currentMissionIndex].missionTitle);
+        currentMissionIndex++;
+
+        if (currentMissionIndex < missions.Length)
+        {
+            UpdateMissionUI();
+        }
+        else
+        {
+            objectiveText.text = "All missions complete!";
+            Debug.Log("All missions complete!");
+        }
+    }
+
+    private void UpdateMissionUI()
+    {
+        if (currentMissionIndex < missions.Length)
+        {
+            objectiveText.text = missions[currentMissionIndex].missionTitle + "\n" + missions[currentMissionIndex].missionDescription;
+        }
+        else
+        {
+            objectiveText.text = "All missions complete!";
+        }
+    }
+
+    public void ForceSpecificMission(int missionIndex)
+    {
+        if (missionIndex >= 0 && missionIndex < missions.Length)
+        {
+            Debug.Log($"Forcing mission to index {missionIndex}");
+            currentMissionIndex = missionIndex;
+            UpdateMissionUI();
+        }
+        else
+        {
+            Debug.LogWarning("Tried to force mission, but the index was invalid.");
+        }
+    }
+
+    public void ForceNextMission()
+    {
+        // This method is now accessible to other scripts.
+        CompleteMission();
+    }
+}

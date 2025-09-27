@@ -1,0 +1,57 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class EnvironmentManager : MonoBehaviour
+{
+    public static EnvironmentManager Instance;
+
+    public List<LightFlicker> controllableLights;
+
+    void Awake()
+    {
+        if(Instance == null)
+        {
+            Instance == this;
+        }
+
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    public void FlickerAllLights()
+    {
+        foreach (var lightFlicker in controllableLights)
+        {
+            if(lightFlicker != null)
+            {
+                lightFlicker.StartFlicker();
+            }
+        }
+    }
+    public void TurnOffRandomLight()
+    {
+        if (controllableLights.Count > 0)
+        {
+            int index = Random.Range(0, controllableLights.Count);
+            if (controllableLights[index] != null)
+            {
+                controllableLights[index].StopFlicker();
+                controllableLights[index].SetLightState(false);
+            }
+        }
+    }
+
+    public void RestoreAllLights()
+    {
+        foreach (var lightFlicker in controllableLights)
+        {
+            if (lightFlicker != null)
+            {
+                lightFlicker.StopFlicker();
+                lightFlicker.SetLightState(true);
+            }
+        }
+    }
+}

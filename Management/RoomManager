@@ -1,0 +1,83 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public class RoomManager : MonoBehaviour
+{
+    public static RoomManager Instance;
+
+    public GameObject teleportDoorPrefab;
+    public Transform[] doorSpawnPoints;
+    private List<GameObject> spawnedDoors = new List<GameObject>();
+
+    public GameObject newDoorPrefab;
+    public GameObject newHallwayPrefab;
+
+    public List<Transform> spawnPoints;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void SpawnTeleportDoor()
+    {
+        if (doorSpawnPoints.Length > 0)
+        {
+            int randomIndex = Random.Range(0, doorSpawnPoints.Length);
+            Transform spawnPoint = doorSpawnPoints[randomIndex];
+
+            GameObject newDoor = Instantiate(teleportDoorPrefab, spawnPoint.position, spawnPoint.rotation);
+            spawnedDoors.Add(newDoor);
+        }
+    }
+    
+    public void RemoveTeleportDoors()
+    {
+        foreach(GameObject door in spawnedDoors)
+        {
+            Destroy(door);
+        }
+        spawnedDoors.Clear();
+    }
+
+    public void AddNewDoor()
+    {
+        if (spawnPoints.Count == 0)
+        {
+            Debug.LogWarning("No spawn points available for adding a new door.");
+            return;
+        }
+
+        int index = Random.Range(0, spawnPoints.Count);
+        Transform spawnPoint = spawnPoints[index];
+
+        Instantiate(newDoorPrefab, spawnPoint.position, spawnPoint.rotation);
+        spawnPoints.RemoveAt(index);
+        
+        Debug.Log("Enemy has added a new door to the environment.");
+    }
+
+    public void ExtendHallway()
+    {
+        if (spawnPoints.Count == 0)
+        {
+            Debug.LogWarning("No spawn points available for extending a hallway.");
+            return;
+        }
+
+        int index = Random.Range(0, spawnPoints.Count);
+        Transform spawnPoint = spawnPoints[index];
+        
+        Instantiate(newHallwayPrefab, spawnPoint.position, spawnPoint.rotation);
+        spawnPoints.RemoveAt(index);
+        
+        Debug.Log("Enemy has extended a hallway.");
+    }
+}

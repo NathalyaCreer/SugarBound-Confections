@@ -1,0 +1,61 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public class InventoryManager : MonoBehaviour
+{
+    public static InventoryManager Instance;
+
+    public GameObject candyBagPrefab;
+
+    public List<string> ingredients = new List<string>();
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void AddIngredient(string ingredientName)
+    {
+        ingredients.Add(ingredientName);
+        Debug.Log($"Added {ingredientName} to inventory.");
+    }
+
+    public string StealRandomIngredient()
+    {
+        if (ingredients.Count == 0)
+        {
+            Debug.Log("Inventory is empty, nothing to steal.");
+            return null;
+        }
+
+        int randomIndex = Random.Range(0, ingredients.Count);
+        string stolenIngredient = ingredients[randomIndex];
+        ingredients.RemoveAt(randomIndex);
+        
+        Debug.Log($"Stole {stolenIngredient} from inventory.");
+        return stolenIngredient;
+    }
+
+    public bool HasIngredient(string ingredientName)
+    {
+        return ingredients.Contains(ingredientName);
+    }
+
+    public void ThrowCandyBag(Transform playerHand)
+    {
+        if (candyBagsRemaining > 0)
+        {
+            GameObject bag = Instantiate(candyBagPrefab, playerHand.position, playerHand.rotation);
+            //throwing force based on player's velocity
+            bag.GetComponent<Rigbody>().AddForce(playerHand.forward * 10f, ForceMode.Impulse);
+            candyBagsRemaining--;
+        }
+    }
+}

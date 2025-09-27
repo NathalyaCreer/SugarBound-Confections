@@ -1,0 +1,176 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System;
+
+public class CookingStationManager : MonoBehaviour
+{
+    public static CookingStationManager Instance;
+
+    public IngredientStorage ingredientStorage; // New reference to ingredient storage
+    public RecipeBook recipeBook;
+    public Transform ingredientSpawnPoint;
+
+    private Recipe currentRecipe;
+    private bool isCooking = false;
+    private float cookingTimer = 0f;
+    private float totalCookingTime;
+
+    // Player detection
+    public bool isPlayerPresent = false;
+    public string playerTag = "Player";
+
+    // Visual feedback
+    public Renderer progressRenderer;
+    public Transform finishedProductSpawn;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void OnEnable()
+    {
+        GameEvents.OnRecipeSelected += SetCurrentRecipe;
+    }
+
+    void OnDisable()
+    {
+        GameEvents.OnRecipeSelected -= SetCurrentRecipe;
+    }
+
+    private void Start()
+    {
+        if (ingredientStorage == null)
+        {
+            Debug.LogError("IngredientStorage not assigned to the CookingStationManager!");
+            this.enabled = false;
+            return;
+        }
+        ResetStation();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isPlayerPresent = true;
+            Debug.Log("Player entered the cooking station area.");
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isPlayerPresent = false;
+            Debug.Log("Player left the cooking station area.");
+        }
+    }
+
+    void Update()
+    {
+        if (isCooking)
+        {
+            cookingTimer += Time.deltaTime;
+            UpdateProgressVisuals(cookingTimer / totalCookingTime);
+
+            if (cookingTimer >= totalCookingTime)
+            {
+                FinishCooking();
+            }
+        }
+    }
+
+    public void AddIngredient(string ingredientName)
+    {
+        if (!isCooking && currentRecipe != null)
+        {
+            if (ingredientStorage.TryAddIngredient(ingredientName))
+            {
+                if (ingredientStorage.HasAllRequiredIngredients(currentRecipe.requiredIngredients))
+                {
+                    StartCooking();
+                }
+            }
+        }
+    }
+
+    public string StealIngredient()
+    {
+        string stolenName = ingredientStorage.StealRandomIngredient();
+        if (stolenName != null)
+        {
+            Debug.Log($"An ingredient ({stolenName}) was stolen from the cooking station!");
+            if (isCooking)
+            {
+                ResetStation();
+            }
+        }
+        return stolenName;
+    }
+
+    public void SetCurrentRecipe(Recipe recipe)
+    {
+        currentRecipe = recipe;
+        ResetStation();
+        Debug.Log($"Current recipe set to: {recipe.recipeName}");
+    }
+
+    private void StartCooking()
+    {
+        if (CheckRecipeComplete() && !isCooking)
+        {
+            isCooking = true;
+            cookingTimer = 0f;
+            totalCookingTime = currentRecipe.baseCookingTime;
+            Debug.Log("Cooking has started.");
+        }
+    }
+
+    private bool CheckRecipeComplete()
+    {
+        return currentRecipe != null && ingredientStorage.HasAllRequiredIngredients(currentRecipe.requiredIngredients);
+    }
+    
+    private void UpdateProgressVisuals(float progress)
+    {
+        if (progressRenderer != null)
+        {
+            // Update the material's properties (e.g., color, or a texture offset)
+            // Example: progressRenderer.material.color = Color.Lerp(Color.red, Color.green, progress);
+        }
+    }
+
+    private void FinishCooking()
+    {
+        Debug.Log("Pastry complete!");
+        isCooking = false;
+        ingredientStorage.ConsumeIngredients(currentRecipe.requiredIngredients);
+
+        // Instantiate the finished pastry prefab at finishedProductSpawn
+        if (finishedProductSpawn != null)
+        {
+            // Instantiate Logic here
+        }
+        
+        // Notify the MissionManager via the event system
+        GameEvents.OnMissionProgress?.Invoke(MissionCompletionType.Baking, "");
+
+        ResetStation();
+    }
+
+    private void ResetStation()
+    {
+        isCooking = false;
+        cookingTimer = 0f;
+        ingredientStorage.ClearAllIngredients();
+        // Reset visuals here
+    }
+}
